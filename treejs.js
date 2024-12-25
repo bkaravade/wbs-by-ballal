@@ -19,7 +19,18 @@ var color_array=["--", "yellow", "orange", "lightgreen"]
 var status_options=["-Status-", "Proposed", "In-Process", "Completed"];
 
 $(document).ready(function () {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    if(width > 900){
     addFirstRow();
+    document.getElementById("minimum_width_div").hidden=true;
+    document.getElementById("main_body").hidden=false;
+    } else {
+        // alert("Try On Desktop or Laptop");
+        document.getElementById("minimum_width_div").hidden=false;
+    document.getElementById("main_body").hidden=true;
+        
+    }
 });
 function indentRow(){
    
@@ -46,11 +57,11 @@ function indentRow(){
 
     let left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
     if (left_pad != NaN && left_pad > 0) {
-            currentRow.cells[1].innerHTML = "<i class='fa fa-child'></i>&nbspChild";
+            currentRow.cells[1].innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbspChild";
             currentRow.cells[1].style.paddingLeft = (left_pad + 20) + "px";
     }
     else {
-        currentRow.cells[1].innerHTML = "<i class='fa fa-child'></i>&nbspParent";
+        currentRow.cells[1].innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbspParent";
         currentRow.cells[1].style.paddingLeft = "20px";
     }
     for(var t in testData){
@@ -106,7 +117,7 @@ function addFirstRow() {
     const newCell2 = newRow.insertCell(2);
     const newCell3 = newRow.insertCell(3);
     newCell0.innerText = "1";
-    newCell1.innerText = "1";
+    newCell1.innerText = "Master";
     newCell2.innerText = "Main Project "//"Child " + tempActivity;
     newCell3.innerText = "None";
     newCell0.classList.add("td-activity");
@@ -227,11 +238,11 @@ function addChild(identifier) {
 
         let left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
         if (left_pad != NaN && left_pad > 0) {
-            newCell1.innerHTML = "<i class='fa fa-child'></i>&nbspChild";
+            newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbspChild";
             newCell1.style.paddingLeft = (left_pad + 20) + "px";
         }
         else {
-            newCell1.innerHTML = "<i class='fa fa-child'></i>&nbspParent";
+            newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbspParent";
             newCell1.style.paddingLeft = "20px";
         }
         newRow.setAttribute("id", tempActivity);
