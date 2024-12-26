@@ -12,11 +12,11 @@ Key Features:
 
 •	Sub-System Attributes: Define and track key task attributes such as: 
 
-o	Task Name
+  o	Task Name
 
-o	Status
+  o	Status
 
-o	Parent Relation
+  o	Parent Relation
 
 •	Visual Representation: Display the WBS in a clear and concise visual format (e.g., tree diagram, indented list).
 
@@ -34,7 +34,7 @@ Technologies:
 
 •	Libraries/Frameworks: Consider using libraries like: 
 
-o	jQuery: For DOM manipulation and event handling.
+  o	jQuery: For DOM manipulation and event handling.
 
 Project Goals:
 
