@@ -15,8 +15,31 @@ var sub_system_data_to_tree = [];
 var testData = [];
 var targetRow="";
 
-var color_array=["--", "yellow", "orange", "lightgreen"]
-var status_options=["-Status-", "Proposed", "In-Process", "Completed"];
+var project_manpower=[
+    {
+        'id': 1,
+        'name': 'Person 1',
+        'designation': 'Project Director',
+    },
+    {
+        'id': 2,
+        'name': 'Person 2',
+        'designation': 'Point of Contact',
+    },
+    {
+        'id': 3,
+        'name': 'Person 3',
+        'designation': 'Team Member',
+    },
+    {
+        'id': 4,
+        'name': 'Person 4',
+        'designation': 'Team Member',
+    },
+];
+
+var color_array=["--", "yellow", "orange", "red","lightgreen"]
+var status_options=["-Status-", "Proposed", "In-Process", "Under-Closure", "Completed"];
 
 $(document).ready(function () {
     const width = window.innerWidth;
@@ -32,80 +55,116 @@ $(document).ready(function () {
         
     }
 });
-function indentRow(){
-   
-    let new_parent;
-    let pos = subsystems_in_level[wbs[currentRow.id]['level']].indexOf(parseInt(currentRow.id));
-   
-    if(subsystems_in_level[wbs[currentRow.id]['level']][pos-1] != undefined){
-        new_parent=subsystems_in_level[wbs[currentRow.id]['level']][pos-1];
-    }
-    var array =subsystems_in_level[wbs[currentRow.id]['level']];
-    array.splice(subsystems_in_level[wbs[currentRow.id]['level']].indexOf(parseInt(currentRow.id)), 1);
-    subsystems_in_level[wbs[currentRow.id]['level']]=array;
-    
-    if(subsystems_in_level[wbs[currentRow.id]['level']+1] == undefined){
-        subsystems_in_level[wbs[currentRow.id]['level']+1]=[];
-    }
-    subsystems_in_level[wbs[currentRow.id]['level']+1].push(parseInt(currentRow.id));
 
-    wbs[currentRow.id]['level']+=1;
-    wbs[currentRow.id]['parent'] = new_parent;    
+function addManpower() {
+    document.getElementById("staticBackdropLabel").innerText ="Manpower for System: "+ testData.filter(t=>t.id==currentRow.id)[0].name;
+    $("#staticBackdrop").modal('show');
+    load_manpower();
+}
 
-    wbs[new_parent]['childrens'].push(parseInt(currentRow.id));
-    
+function load_manpower() {
+    let array = testData.filter(t=>t.id==currentRow.id)[0].manpower;
+    $("#manpower_table tbody").empty();console.log(array);
+    for(let j =0 ; j < project_manpower.length ; j++){
+        if (array.indexOf(project_manpower[j].id) > -1) {
+            debugger;
+            $("#manpower_table tbody").append(
+                "<tr style='background-color: lightgreen;'>" +
+                "<td>" + project_manpower[j].id + "</td>" +
+                "<td>" + project_manpower[j].name + "</td>" +
+                "<td>" + project_manpower[j].designation + "</td>" +
+                "<td><span class='btn btn-sm btn-danger' onclick='manpower_system_remove(" + project_manpower[j].id + ")'>Remove</span></td>" +
+                "</tr>"
+            );
+        } else{
+            $("#manpower_table tbody").append(
+                "<tr>" +
+                "<td>" + project_manpower[j].id + "</td>" +
+                "<td>" + project_manpower[j].name + "</td>" +
+                "<td>" + project_manpower[j].designation + "</td>" +
+                "<td><span class='btn btn-sm btn-primary' onclick='manpower_system_add(" + project_manpower[j].id + ")'>Add</span> </td>" +
+                "</tr>"
+            );
+        }
+    }
+}
 
-    let left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
-    if (left_pad != NaN && left_pad > 0) {
-            currentRow.cells[1].innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbspChild";
-            currentRow.cells[1].style.paddingLeft = (left_pad + 20) + "px";
+function manpower_system_add(manp_id){
+    if (testData.filter(t => t.id == currentRow.id)[0].manpower.indexOf(manp_id) == -1) {
+        testData.filter(t => t.id == currentRow.id)[0].manpower.push(manp_id);
+        load_manpower();
     }
-    else {
-        currentRow.cells[1].innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbspParent";
-        currentRow.cells[1].style.paddingLeft = "20px";
+}
+
+function manpower_system_remove(manp_id){
+    if (testData.filter(t => t.id == currentRow.id)[0].manpower.indexOf(manp_id) != -1) {
+        let arr = testData.filter(t => t.id == currentRow.id)[0].manpower;
+        arr = arr.filter(item => item !== manp_id);
+        testData.filter(t => t.id == currentRow.id)[0].manpower=arr;
+        load_manpower();
     }
-    for(var t in testData){
-         if(testData[t]['id'] == currentRow.id){
-            testData[t]['name'] = wbs[currentRow.id]['Name'];
-            testData[t]['parent'] = wbs[currentRow.id]['parent'];
-         }
-    }
-    saveWBS();
+}
+
+function indent() {
+    // let current_parent_obj = testData.filter(task => task.id == currentRow.id)[0]
+    // let new_parent_obj = testData.filter(task => task.id == current_parent_obj.parent)[0];
+
+    // current_parent_obj.parent = ''+new_parent_obj.parent+'';
+
+    // console.log(current_parent_obj.parent+ " "+new_parent_obj.parent);
+
+    // let left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
+    // let newCell1 = currentRow.cells[1];
+    // if (left_pad != NaN && left_pad > 0) {
+    //     newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>" + newCell1.innerText;
+    //     newCell1.style.paddingLeft = (left_pad + 20) + "px";
+    // }
+    // saveWBS();
+    // currentRow=null;
 
 }
-var abc = [];
+
+function outdent() {
+    let child_array = returnSuccessorChildrens(currentRow.id);
+    
+    let current_parent_obj = testData.filter(task => task.id == currentRow.id)[0]
+    let new_parent_obj = testData.filter(task => task.id == current_parent_obj.parent)[0];
+
+    current_parent_obj.parent = ''+new_parent_obj.parent+'';
+
+    console.log(child_array);
+    for (let i = 0; i < child_array.length; i++) {
+        currentRow=null;
+        currentRow=document.getElementById(child_array[i]);
+        let left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
+        let newCell1 = currentRow.cells[1];
+        if (left_pad != NaN && left_pad > 0) {
+            newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>" + newCell1.innerText;
+            newCell1.style.paddingLeft = (left_pad - 20) + "px";
+        }
+        testData.filter(t => t.id == child_array[i])[0].level-=1;
+    }
+    saveWBS();
+    currentRow=null;
+    child_array_global=[];
+}
+
+
+var child_array_global = [];
 function returnSuccessorChildrens(id) {
    
     if (wbs[id]['active'] == 0) {
         if (wbs[id]['childrens'].length == 0) {
-            abc.push(parseInt(id));
+            child_array_global.push(parseInt(id));
         }
         for (var i in wbs[id]['childrens']) {
-            abc.push(parseInt(id));
+            child_array_global.push(parseInt(id));
             returnSuccessorChildrens(wbs[id]['childrens'][i]);
         }
     }
-    const uniqueArray = abc.filter((value, index, self) => self.indexOf(value) === index);
-    return uniqueArray;
-}
-function breakWBS(){
-    abc = [];
-    var ele_list=returnSuccessorChildrens(currentRow.id);
-    let temp_obj = {};
-    for(let i in ele_list){
-        temp_obj[ele_list[i]] = wbs[ele_list[i]];
-       
-        
-        if(i==0){
-            temp_obj[ele_list[i]]['level'] = 1;
-        }else {
-            temp_obj[ele_list[i]]['level'] = temp_obj[ele_list[i]]['level']-wbs[ele_list[0]]['level'];
-        }   
-    }
-    wbs_with_breaks[ele_list[0]] = temp_obj;
-
-    currentRow.cells[2].style.paddingLeft =10+"px"; 
+    const uniqueArray = child_array_global.filter((value, index, self) => self.indexOf(value) === index);
     
+    return uniqueArray;
 }
 
 function addFirstRow() {
@@ -115,15 +174,14 @@ function addFirstRow() {
     const newCell0 = newRow.insertCell(0);
     const newCell1 = newRow.insertCell(1);
     const newCell2 = newRow.insertCell(2);
-    const newCell3 = newRow.insertCell(3);
+
     newCell0.innerText = "1";
-    newCell1.innerText = "Master";
-    newCell2.innerText = "Main Project "//"Child " + tempActivity;
-    newCell3.innerText = "None";
+    newCell1.innerText = "Main Project";;
+    newCell2.innerText = "None";
+
     newCell0.classList.add("td-activity");
     newCell1.classList.add("td-activity");
     newCell2.classList.add("td-activity");
-    newCell3.classList.add("td-activity");
 
 
     newRow.setAttribute("id", "1");
@@ -138,8 +196,9 @@ function addFirstRow() {
     temp['childrens'] = [];
     temp['active'] = 0;
     temp['module'] = 0;
+   
     wbs[1] = temp;
-    testData.push({ id: temp['ID'], name: temp['Name'], parent: temp['parent'], active:temp['active'], module:temp['module'], level:temp['level'] });
+    testData.push({ id: temp['ID'], name: temp['Name'], parent: temp['parent'], active:temp['active'], module:temp['module'], level:temp['level'], manpower:[] });
 
     objects_in_level[1] = 1;
     subsystems_in_level[1] = [1];
@@ -226,23 +285,21 @@ function addChild(identifier) {
         const newCell0 = newRow.insertCell(0);
         const newCell1 = newRow.insertCell(1);
         const newCell2 = newRow.insertCell(2);
-        const newCell3 = newRow.insertCell(3);
         newCell0.innerText = tempActivity;
-        newCell1.innerText = "Sub-System";
-        newCell2.innerText = "Sub-System " + tempActivity;
-        newCell3.innerText = "None"//"Status " + tempActivity;
+        newCell1.innerText = "Sub-System " + tempActivity;
+        newCell2.innerText = "None";
+
         newCell0.classList.add("td-activity");
         newCell1.classList.add("td-activity");
         newCell2.classList.add("td-activity");
-        newCell3.classList.add("td-activity");
 
         let left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
         if (left_pad != NaN && left_pad > 0) {
-            newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbspChild";
+            newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbsp;"+newCell1.innerText;
             newCell1.style.paddingLeft = (left_pad + 20) + "px";
         }
         else {
-            newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbspParent";
+            newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbsp;"+newCell1.innerText;
             newCell1.style.paddingLeft = "20px";
         }
         newRow.setAttribute("id", tempActivity);
@@ -256,7 +313,7 @@ function addChild(identifier) {
         temp['module'] = 0;
         temp['Name'] = "Sub-System" + tempActivity;
         wbs[tempActivity] = temp;
-        tempActivity++;
+   
 
         objects_in_level[wbs[currentRow.id]['level'] + 1] = (objects_in_level[wbs[currentRow.id]['level'] + 1]) + 1;
         (subsystems_in_level[wbs[currentRow.id]['level'] + 1]).push(temp['ID']);
@@ -268,6 +325,7 @@ function addChild(identifier) {
         temp2['level'] = wbs[currentRow.id]['level'] + 1;
         temp2['module'] = 0;
         temp2['active'] = 0;
+        temp2['manpower']=[];
         testData.push(temp2);
     
     tempActivity++;
@@ -310,12 +368,12 @@ function editRowInline(row) {
     let temp = 0;
 
     for(let r in status_options){
-        if(row.cells[3].innerText == status_options[r]){
+        if(row.cells[2].innerText == status_options[r]){
             temp = r;
         }
     }
-    row.cells[2].innerHTML = "<input type='text' value='" + row.cells[2].innerText + "' id='systemName" + row.id + "'>";
-    row.cells[3].innerHTML = "<select id='SystemStatus" + row.id + "'><option value='0' style='background-color: "+color_array[0]+"'>-Status-</option><option value='1' style='background-color: "+color_array[1]+"'>Proposed</option><option value='2' style='background-color: "+color_array[2]+"'>In-Process</option><option value='3' style='background-color: "+color_array[3]+"'>Completed</option></select>";
+    row.cells[1].innerHTML = "<input type='text' value='" + row.cells[1].innerText + "' id='systemName" + row.id + "'>";
+    row.cells[2].innerHTML = "<select id='SystemStatus" + row.id + "'><option value='0' style='background-color: "+color_array[0]+"'>-Status-</option><option value='1' style='background-color: "+color_array[1]+"'>Proposed</option><option value='2' style='background-color: "+color_array[2]+"'>In-Process</option><option value='3' style='background-color: "+color_array[3]+"'>Under-Closure</option><option value='4' style='background-color: "+color_array[4]+"'>Completed</option></select>";
     document.getElementById("SystemStatus" + row.id).value = temp;
 }
 
@@ -334,14 +392,14 @@ function saveRow(row) {
             testData[t].module = document.getElementById("SystemStatus" + row.id).value;
         }
     }
-    row.cells[2].innerText = document.getElementById("systemName" + row.id).value;
-    row.cells[3].innerText = status_options[document.getElementById("SystemStatus" + row.id).value];
+    row.cells[1].innerText = document.getElementById("systemName" + row.id).value;
+    row.cells[2].innerText = status_options[document.getElementById("SystemStatus" + row.id).value];
     saveWBS();
 
 }
 function saveWBS() {
 
-    var b = drawList(1);
+
     //$("#parent_chart").html(b);
     let data_avoid_deleted=testData.filter(a => a.active == 0);
     $(function () {
@@ -397,37 +455,9 @@ function drawList(id) {
     }
     return b;
 }
-function outdentRow() {
-    var left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
-    if (left_pad != NaN && left_pad > 0) {
-        currentRow.cells[1].innerText = "";
-        currentRow.cells[1].style.paddingLeft = (left_pad - 20) + "px";
-        left_pad = left_pad - 20;
-        if (parseInt(currentRow.cells[1].style.paddingLeft) > 0) {
-            currentRow.cells[1].innerHTML = "<i class='fa fa-arrow-right'></i>&nbspParent";
-        }
-        else {
-            currentRow.cells[1].innerHTML = "&nbspParent";
-        }
-    }
-    else {
-        alert("Outdent validation");
-    }
-}
 
-// function indentRow() {
-//     var left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
-//     if (left_pad != NaN && left_pad > 0) {
-//         currentRow.cells[1].innerText = "";
-//         currentRow.cells[1].style.paddingLeft = (left_pad + 20) + "px";
-//         if (left_pad > 0) {
-//             currentRow.cells[1].innerHTML = "<i class='fa fa-arrow-right'></i>&nbspParent";
-//         }
-//     }
-//     else {
-//         alert("Outdent validation");
-//     }
-// }
+
+
 function printWBS(){
     let test_data = testData.filter(a => a.active==0);
     let html_table ="<span style='font-weight: 600; font-size: 16px;'>WBS Sub-System List: </span>";
