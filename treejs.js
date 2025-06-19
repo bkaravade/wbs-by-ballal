@@ -42,19 +42,21 @@ var color_array=["--", "yellow", "orange", "red","lightgreen"]
 var status_options=["-Status-", "Proposed", "In-Process", "Under-Closure", "Completed"];
 
 $(document).ready(function () {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    if(width > 900){
+    // const width = window.innerWidth;
+    // const height = window.innerHeight;
+    // if(width > 900){
     addFirstRow();
-    document.getElementById("minimum_width_div").hidden=true;
-    document.getElementById("main_body").hidden=false;
-    } else {
-        // alert("Try On Desktop or Laptop");
-        document.getElementById("minimum_width_div").hidden=false;
-    document.getElementById("main_body").hidden=true;
+    // document.getElementById("minimum_width_div").hidden=true;
+    // document.getElementById("main_body").hidden=false;
+    // } else {
+    //     // alert("Try On Desktop or Laptop");
+    //     document.getElementById("minimum_width_div").hidden=false;
+    // document.getElementById("main_body").hidden=true;
         
-    }
+    // }
 });
+
+
 
 function addManpower() {
     document.getElementById("staticBackdropLabel").innerText ="Manpower for System: "+ testData.filter(t=>t.id==currentRow.id)[0].name;
@@ -105,34 +107,75 @@ function manpower_system_remove(manp_id){
     }
 }
 
+function build_wbs_obj(){
+    for (let r in testData) {
+        var temp = {};
+        temp['ID'] = testData['id'];
+        temp['Name'] = testData['name'];
+        temp['level'] = testData['level'];
+        temp['parent'] = testData['parent'];
+        temp['childrens'] = [];
+        temp['active'] = testData['active'];
+        temp['module'] = testData['module'];
+        
+        let list =testData.filter(p=> p.parent == '201');
+        for(let i in list){
+            temp['childrens'].push(list[i].id); 
+        }
+        wbs[temp[['ID']]] = temp;
+    }
+
+}
+
 function indent() {
-    // let current_parent_obj = testData.filter(task => task.id == currentRow.id)[0]
-    // let new_parent_obj = testData.filter(task => task.id == current_parent_obj.parent)[0];
+    let child_array = returnSuccessorChildrens(currentRow.id);
+    let current_parent_obj = testData.filter(task => task.id == currentRow.id)[0];
 
-    // current_parent_obj.parent = ''+new_parent_obj.parent+'';
+    console.log(currentRow.id);
+    console.log(child_array);
 
-    // console.log(current_parent_obj.parent+ " "+new_parent_obj.parent);
 
-    // let left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
-    // let newCell1 = currentRow.cells[1];
-    // if (left_pad != NaN && left_pad > 0) {
-    //     newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>" + newCell1.innerText;
-    //     newCell1.style.paddingLeft = (left_pad + 20) + "px";
-    // }
+
+    var just_before_task=0;
+    if(subsystems_in_level[current_parent_obj.level].indexOf(parseInt(currentRow.id)) > -1) {
+        just_before_task = subsystems_in_level[current_parent_obj.level][subsystems_in_level[current_parent_obj.level].indexOf(parseInt(currentRow.id))-1];
+    }
+    current_parent_obj.parent=''+just_before_task+'';
+    
+
+    console.log("abc :"+just_before_task);
+
+    for (let i = 0; i < child_array.length; i++) {
+        currentRow=null;
+        currentRow=document.getElementById(child_array[i]);
+        let left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
+        let newCell1 = currentRow.cells[1];
+        if (left_pad != NaN && left_pad > 0) {
+            newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>" + newCell1.innerText;
+            newCell1.style.paddingLeft = (left_pad + 20) + "px";
+        }
+        testData.filter(t => t.id == child_array[i])[0].level+=1;
+    }
+
+
     // saveWBS();
-    // currentRow=null;
-
+    currentRow=null;
+    child_array_global=[];
+    build_system_objs();
+    build_wbs_obj();
 }
 
 function outdent() {
     let child_array = returnSuccessorChildrens(currentRow.id);
     
-    let current_parent_obj = testData.filter(task => task.id == currentRow.id)[0]
+    let current_parent_obj = testData.filter(task => task.id == currentRow.id)[0];
     let new_parent_obj = testData.filter(task => task.id == current_parent_obj.parent)[0];
+  
+    let after_tasks = subsystems_in_level[current_parent_obj.level].slice((subsystems_in_level[current_parent_obj.level].indexOf(parseInt(currentRow.id))));
+ 
+    console.log(after_tasks);
 
     current_parent_obj.parent = ''+new_parent_obj.parent+'';
-
-    console.log(child_array);
     for (let i = 0; i < child_array.length; i++) {
         currentRow=null;
         currentRow=document.getElementById(child_array[i]);
@@ -142,11 +185,50 @@ function outdent() {
             newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>" + newCell1.innerText;
             newCell1.style.paddingLeft = (left_pad - 20) + "px";
         }
-        testData.filter(t => t.id == child_array[i])[0].level-=1;
+        //testData.filter(t => t.id == child_array[i])[0].level-=1;
     }
+
+    for (let t = 1; t < after_tasks.length; t++) {
+        let child_array2 = returnSuccessorChildrens(after_tasks[t]);
+        testData.filter(tsk => tsk.id == after_tasks[t])[0].parent = current_parent_obj.id;
+        testData.filter(t1 => t1.id == after_tasks[t])[0].level -= 1;
+        console.log(after_tasks[t]);
+        for (let i = 1; i < child_array2.length; i++) {
+            currentRow = null;
+            currentRow = document.getElementById(child_array2[i]);
+            let left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
+            let newCell1 = currentRow.cells[1];
+            if (left_pad != NaN && left_pad > 0) {
+                newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>" + newCell1.innerText;
+                newCell1.style.paddingLeft = (left_pad - 20) + "px";
+            }
+            testData.filter(t => t.id == child_array2[i])[0].level -= 1;
+        }
+    }
+  
     saveWBS();
     currentRow=null;
     child_array_global=[];
+    build_system_objs();
+    build_wbs_obj();
+}
+
+function build_system_objs() {
+    subsystems_in_level={};
+    objects_in_level={};
+    let max=0;
+
+    for (let k in testData){
+        if(testData[k].level > max){
+            objects_in_level[testData[k].level]=1;
+            subsystems_in_level[testData[k].level]=[testData[k].id];
+            max = testData[k].level;
+        }else{
+            objects_in_level[testData[k].level]+=1;
+            subsystems_in_level[testData[k].level].push(testData[k].id);
+        }
+    }
+
 }
 
 
@@ -165,6 +247,21 @@ function returnSuccessorChildrens(id) {
     const uniqueArray = child_array_global.filter((value, index, self) => self.indexOf(value) === index);
     
     return uniqueArray;
+}
+
+function arrange_data() {
+    var test_temp = [];
+    const table = document.getElementById('wbs'); // Replace 'myTable' with your table's ID
+
+    const rowIds = Array.from(table.querySelectorAll('tr'))
+        .map(row => row.id)
+        .filter(id => id); // Optional: skip rows without an id
+
+    console.log(rowIds);
+    for(let r in rowIds){
+        test_temp.push(testData.filter(y => y.id == rowIds[r])[0]);
+    }
+    testData = test_temp;
 }
 
 function addFirstRow() {
@@ -203,6 +300,7 @@ function addFirstRow() {
     objects_in_level[1] = 1;
     subsystems_in_level[1] = [1];
     saveWBS();
+    
 }
 
 
@@ -278,56 +376,57 @@ function addChild(identifier) {
         subsystems_in_level[wbs[currentRow.id]['level'] + 1] = [];
     }
 
-  
-        var count = 0;
-        count = returnSuccessorCount(currentRow.id);
-        const newRow = table.insertRow(currentRow.rowIndex + (count - 1) + 1);
-        const newCell0 = newRow.insertCell(0);
-        const newCell1 = newRow.insertCell(1);
-        const newCell2 = newRow.insertCell(2);
-        newCell0.innerText = tempActivity;
-        newCell1.innerText = "Sub-System " + tempActivity;
-        newCell2.innerText = "None";
 
-        newCell0.classList.add("td-activity");
-        newCell1.classList.add("td-activity");
-        newCell2.classList.add("td-activity");
+    var count = 0;
+    count = returnSuccessorCount(currentRow.id);
+    const newRow = table.insertRow(currentRow.rowIndex + (count - 1) + 1);
+    const newCell0 = newRow.insertCell(0);
+    const newCell1 = newRow.insertCell(1);
+    const newCell2 = newRow.insertCell(2);
+    newCell0.innerText = tempActivity;
+    newCell1.innerText = "Sub-System " + tempActivity;
+    newCell2.innerText = "None";
 
-        let left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
-        if (left_pad != NaN && left_pad > 0) {
-            newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbsp;"+newCell1.innerText;
-            newCell1.style.paddingLeft = (left_pad + 20) + "px";
-        }
-        else {
-            newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbsp;"+newCell1.innerText;
-            newCell1.style.paddingLeft = "20px";
-        }
-        newRow.setAttribute("id", tempActivity);
-        var local_temp = wbs[currentRow.id];
-        (local_temp['childrens']).push(tempActivity);
-        temp['ID'] = tempActivity;
-        temp['level'] = wbs[currentRow.id]['level'] + 1;
-        temp['parent'] = currentRow.id;
-        temp['childrens'] = [];
-        temp['active'] = 0;
-        temp['module'] = 0;
-        temp['Name'] = "Sub-System" + tempActivity;
-        wbs[tempActivity] = temp;
-   
+    newCell0.classList.add("td-activity");
+    newCell1.classList.add("td-activity");
+    newCell2.classList.add("td-activity");
 
-        objects_in_level[wbs[currentRow.id]['level'] + 1] = (objects_in_level[wbs[currentRow.id]['level'] + 1]) + 1;
-        (subsystems_in_level[wbs[currentRow.id]['level'] + 1]).push(temp['ID']);
-        var temp2 = {};
-       
-        temp2['id'] = temp['ID'];
-        temp2['name'] = temp['Name'];
-        temp2['parent'] = temp['parent'];
-        temp2['level'] = wbs[currentRow.id]['level'] + 1;
-        temp2['module'] = 0;
-        temp2['active'] = 0;
-        temp2['manpower']=[];
-        testData.push(temp2);
-    
+    let left_pad = parseInt(currentRow.cells[1].style.paddingLeft);
+    if (left_pad != NaN && left_pad > 0) {
+        newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbsp;" + newCell1.innerText;
+        newCell1.style.paddingLeft = (left_pad + 20) + "px";
+    }
+    else {
+        newCell1.innerHTML = "<i class='fa-solid fa-arrow-right'></i>&nbsp;" + newCell1.innerText;
+        newCell1.style.paddingLeft = "20px";
+    }
+    newRow.setAttribute("id", tempActivity);
+
+    var local_temp = wbs[currentRow.id];
+    (local_temp['childrens']).push(tempActivity);
+    temp['ID'] = tempActivity;
+    temp['level'] = wbs[currentRow.id]['level'] + 1;
+    temp['parent'] = currentRow.id;
+    temp['childrens'] = [];
+    temp['active'] = 0;
+    temp['module'] = 0;
+    temp['Name'] = "Sub-System" + tempActivity;
+    wbs[tempActivity] = temp;
+
+
+    objects_in_level[wbs[currentRow.id]['level'] + 1] = (objects_in_level[wbs[currentRow.id]['level'] + 1]) + 1;
+    (subsystems_in_level[wbs[currentRow.id]['level'] + 1]).push(temp['ID']);
+    var temp2 = {};
+
+    temp2['id'] = temp['ID'];
+    temp2['name'] = temp['Name'];
+    temp2['parent'] = temp['parent'];
+    temp2['level'] = wbs[currentRow.id]['level'] + 1;
+    temp2['module'] = 0;
+    temp2['active'] = 0;
+    temp2['manpower'] = [];
+    testData.push(temp2);
+
     tempActivity++;
     saveWBS();
     hideContextMenu();
